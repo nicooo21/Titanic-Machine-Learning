@@ -437,17 +437,19 @@ def main():
     xNums = list(range(1, 51))
     yNums = []
 
+    print("Computing 10 fold cross-validation scores...")
     # gets 10 fold cross-validation scores for k = 1 to 50
     for x in range(1, 51):
         knnClf = KNeighborsClassifier(x)
         yNums.append(1-(sum(cross_val_score(knnClf, X, y, cv = 10))/float(10)))
         
     # Plotting Commands
-    plt.plot(xNums, yNums)
+    print("Plotting Validation Score Error vs. k Neighbors...")
+    plt.scatter(xNums, yNums, c='b', marker='x')
     plt.xlabel("k neighbors")
     plt.ylabel("Validation Score Error")
-    plt.
-    
+    plt.title("Validation Score Error vs k Neighbors")
+    plt.show()
     ### ========== TODO : END ========== ###
     
     
