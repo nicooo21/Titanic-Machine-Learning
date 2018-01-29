@@ -14,6 +14,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cross_validation import cross_val_score
 from sklearn.cross_validation import train_test_split
 from sklearn import metrics
+import matplotlib.pyplot as plt
 
 ######################################################################
 # classes
@@ -165,6 +166,21 @@ class RandomClassifier(Classifier) :
 ######################################################################
 # functions
 ######################################################################
+# Function to get error of knn classifier
+def error_knnclassifier(neighbors, X, y) :
+    print("Initializing KNeighborsClassifier with %d neighbors" % neighbors)
+    knnClf = KNeighborsClassifier(n_neighbors=neighbors)
+
+    print("Fitting model...")
+    knnClf.fit(X, y)
+
+    print("Making array of predictions...")
+    y_pred = knnClf.predict(X)
+
+    train_error = 1 - metrics.accuracy_score(y, y_pred, normalize=True)
+    print('\t-- training error: %.3f' % train_error)
+
+
 def plot_histograms(X, y, Xnames, yname) :
     n,d = X.shape  # n = number of examples, d =  number of features
     fig = plt.figure(figsize=(20,15))
@@ -246,11 +262,43 @@ def error(clf, X, y, ntrials=100, test_size=0.2) :
     # hint: use train_test_split (be careful of the parameters)
     
     train_error = 0
-    test_error = 0    
+    test_error = 0 
+    train_error_total = 0
+    test_error_total = 0   
+
+    for x in range(0, ntrials):
+        
+        print("Splitting test and training data for trial %d..." % (x))
+    
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = x)
+    
+        print("Fitting data to model...")
+
+        
+        clf.fit(X_train, y_train)
+
+        # Predicting Training Data
+
+        y_pred = clf.predict(X_train)
+
+        train_error = (1 - metrics.accuracy_score(y_train, y_pred, normalize=True))
+
+        # Predicting Test Data
+
+        y_pred = clf.predict(X_test)
+
+        test_error = (1 - metrics.accuracy_score(y_test, y_pred, normalize=True))
+
+        print("Train Error: %.3f\nTest Error: %.3f" % (train_error, test_error))
+
+        train_error_total += train_error
+        test_error_total += test_error
+
+
         
     ### ========== TODO : END ========== ###
     
-    return train_error, test_error
+    return train_error_total/float(100), test_error_total/float(100)
 
 
 def write_predictions(y_pred, filename, yname=None) :
@@ -261,21 +309,6 @@ def write_predictions(y_pred, filename, yname=None) :
         f.writerow([yname])
     f.writerows(list(zip(y_pred)))
     out.close()
-
-# Function to get error of knn classifier
-def error_knnclassifier(neighbors, X, y) :
-    print("Initializing KNeighborsClassifier with %d neighbors" % neighbors)
-    knnClf = KNeighborsClassifier(n_neighbors=neighbors)
-
-    print("Fitting model...")
-    knnClf.fit(X, y)
-
-    print("Making array of predictions...")
-    y_pred = knnClf.predict(X)
-
-    train_error = 1 - metrics.accuracy_score(y, y_pred, normalize=True)
-    print('\t-- training error: %.3f' % train_error)
-
 
 
 ######################################################################
@@ -358,7 +391,7 @@ def main():
     # part d: evaluate training error of k-Nearest Neighbors classifier
     # use k = 3, 5, 7 for n_neighbors 
     print('Classifying using k-Nearest Neighbors...')
-    
+
     print("Evaluating for k = 3")
     error_knnclassifier(3, X, y)
    
@@ -376,7 +409,22 @@ def main():
     ### ========== TODO : START ========== ###
     # part e: use cross-validation to compute average training and test error of classifiers
     print('Investigating various classifiers...')
-    
+    print("Investigating MajorityClassifier...\n====================================\n==================================")
+    training_error, test_error = error(clf, X, y)
+    print("Training Error Average: %.3f\nTesting Error Average: %.3f" %(training_error, test_error))
+    print("=====================================\n=====================================")
+    print("Investigating RandomClassifier...\n====================================\n==================================")
+    training_error, test_error = error(ranClf, X, y)
+    print("Training Error Average: %.3f\nTesting Error Average: %.3f" %(training_error, test_error))
+    print("=====================================\n=====================================")
+    print("Investigating DecisionTreeClassifier...\n====================================\n==================================")
+    training_error, test_error = error(decisionClf, X, y)
+    print("Training Error Average: %.3f\nTesting Error Average: %.3f" %(training_error, test_error))
+    print("=====================================\n=====================================")
+    print("Investigating KNNeighborsClassifier...\n====================================\n==================================")
+    knnClf = KNeighborsClassifier(5)
+    training_error, test_error = error(knnClf, X, y)
+    print("Training Error Average: %.3f\nTesting Error Average: %.3f" %(training_error, test_error))
     ### ========== TODO : END ========== ###
 
 
@@ -384,6 +432,21 @@ def main():
     ### ========== TODO : START ========== ###
     # part f: use 10-fold cross-validation to find the best value of k for k-Nearest Neighbors classifier
     print('Finding the best k for KNeighbors classifier...')
+
+    # Create list of x values signifying neighbors
+    xNums = list(range(1, 51))
+    yNums = []
+
+    # gets 10 fold cross-validation scores for k = 1 to 50
+    for x in range(1, 51):
+        knnClf = KNeighborsClassifier(x)
+        yNums.append(1-(sum(cross_val_score(knnClf, X, y, cv = 10))/float(10)))
+        
+    # Plotting Commands
+    plt.plot(xNums, yNums)
+    plt.xlabel("k neighbors")
+    plt.ylabel("Validation Score Error")
+    plt.
     
     ### ========== TODO : END ========== ###
     
