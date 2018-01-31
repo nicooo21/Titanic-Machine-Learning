@@ -7,6 +7,7 @@ Description : Titanic
 import math
 import csv
 from util import *
+import numpy as np
 from collections import Counter
 
 from sklearn.tree import DecisionTreeClassifier
@@ -441,7 +442,7 @@ def main():
     # gets 10 fold cross-validation scores for k = 1 to 50
     for x in range(1, 51):
         knnClf = KNeighborsClassifier(x)
-        yNums.append(1-(sum(cross_val_score(knnClf, X, y, cv = 10))/float(10)))
+        yNums.append(1-(sum(cross_val_score(knnClf, X, y, cv = 10, scoring="accuracy"))/10))
         
     # Plotting Commands
     print("Plotting Validation Score Error vs. k Neighbors...")
@@ -457,7 +458,30 @@ def main():
     ### ========== TODO : START ========== ###
     # part g: investigate decision tree classifier with various depths
     print('Investigating depths...')
+    print("Computing 10 fold cross-validation scores...")
+    # gets 10 fold cross-validation scores for depth = 1 to 20
     
+    yCrossVal = []
+    yTrainingError = []
+    yTestingError = []
+    
+    for x in range(1, 21):
+        decisionClf = DecisionTreeClassifier(criterion="entropy", max_depth=x)
+        yCrossVal.append(1-(sum(cross_val_score(decisionClf, X, y, cv = 10, scoring="accuracy"))/float(10)))
+        temp_train, temp_test = error(decisionClf, X, y)
+        yTrainingError.append(temp_train)
+        yTestingError.append(temp_test) 
+    
+    # plotting Cross Val Score Error vs. max depth
+    xNums = list(range(1, 21))
+    plt.plot(xNums, yCrossVal, label = "Cross Validation Error")
+    plt.plot(xNums, yTrainingError, label = "Training Error")
+    plt.plot(xNums, yTestingError, label = "Testing Error")
+    plt.xlabel("Max Depth")
+    plt.ylabel("Error")
+    plt.title("Error Comparison vs. Max Depth")
+    plt.legend()
+    plt.show()
     ### ========== TODO : END ========== ###
     
     
@@ -465,6 +489,83 @@ def main():
     ### ========== TODO : START ========== ###
     # part h: investigate Decision Tree and k-Nearest Neighbors classifier with various training set sizes
     print('Investigating training set sizes...')
+    print("Splitting Data...")
+
+    # Set up data
+    k = 7
+    depth = 3
+    x_vals = np.arange(0.1, 1.1, 0.1)
+    training_error_knn = []
+    testing_error_knn = []
+    training_error_dec = []
+    testing_error_dec = []
+
+    # set up classifiers
+    knnClf = KNeighborsClassifier(n_neighbors=k)
+    decisionClf = DecisionTreeClassifier(criterion="entropy", max_depth=depth)
+
+    # split data into 0.1 test, 0.9 train
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.1, random_state = 1)
+
+    # range from 0.1 of training data to 1 times it
+    for i in range(1, 11):
+        # split by i * .14
+        test_percentage = -1
+        if i < 10:
+            test_percentage = 0.1 * i
+        else:
+            test_percentage = 1
+            
+        print ("Running test with %.3f percent of training data" % test_percentage)
+
+        train_error_knn_total = 0
+        test_error_knn_total = 0
+        train_error_dec_total = 0
+        test_error_dec_total = 0
+
+        for x in range(1, 101):
+            X_train_split, X_test_dont_use, y_train_split, y_test_dont_use = train_test_split(X_train, y_train, test_size = 1 - test_percentage, random_state = x)
+        
+            # fit knn classifier
+            knnClf.fit(X_train_split, y_train_split)
+
+            # training error with knn classifier
+            y_pred = knnClf.predict(X_train_split)
+
+            train_error_knn_total += (1 - metrics.accuracy_score(y_train_split, y_pred, normalize=True))
+        
+            # testing error with knn classifier
+            y_pred = knnClf.predict(X_test)
+
+            test_error_knn_total += (1 - metrics.accuracy_score(y_test, y_pred, normalize=True))
+
+            # fit dec classifier
+            decisionClf.fit(X_train_split, y_train_split)
+
+            # training error with knn classifier
+            y_pred = decisionClf.predict(X_train_split)
+
+            train_error_dec_total += (1 - metrics.accuracy_score(y_train_split, y_pred, normalize=True))
+        
+            # testing error with knn classifier
+            y_pred = decisionClf.predict(X_test)
+
+            test_error_dec_total += (1 - metrics.accuracy_score(y_test, y_pred, normalize=True))
+        
+        training_error_knn.append(train_error_knn_total/100)
+        testing_error_knn.append(test_error_knn_total/100)
+        training_error_dec.append(train_error_dec_total/100)
+        testing_error_dec.append(test_error_dec_total/100)
+
+    plt.scatter(x_vals, training_error_knn, label = "Training Error KNN", c = 'r')
+    plt.scatter(x_vals, testing_error_knn, label = "Testing Error KNN", c = 'y')
+    plt.scatter(x_vals, training_error_dec, label = "Training Error Decision", c = 'g')
+    plt.scatter(x_vals, testing_error_dec, label = "Testing Error Decision", c = 'b')
+    plt.xlabel("Percentage of Training Data Used")
+    plt.ylabel("Error")
+    plt.title("Error vs. Percentage of Training Data Used")
+    plt.legend()
+    plt.show()
     
     ### ========== TODO : END ========== ###
     
